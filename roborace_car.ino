@@ -1,24 +1,44 @@
 #include "mini_car.h"
+#include "tests.h"
 
 Car car;
 
 void setup() {
   car.init();
   Serial.begin(9600);
-  
+  while (car.read_sensors()[3] == 1){}
+  while (car.read_sensors()[3] == 0){}
 }
 
 void loop() {
-  // -1000 full back, 1000 full forward, 0 neutral
-  car.write_speed(0); // -1000..1000
+  print_sensors(car);
+  delay(1000);
+  return;
+  float* sensors = car.read_sensors();
+  // 0 - Left
+  // 1 - Middle
+  // 2 - Right
+  // 3 - Front button, 0 is pressed, 1 is released
+
+  int steer = (sensors[2] - sensors[0]) / 2;
   
-  // -1000 full left, 1000 full right, 0 straight
-  car.write_steer(0); // -1000..1000
+  static bool fast = false;
   
-  float* sensors = car.read_sensors(); // Array of 4 floats
-  
-  sensors[0]; // Left
-  sensors[1]; // Middle
-  sensors[2]; // Right
-  sensors[3]; // Front button, 0 is pressed, 1 is released
+  if (sensors[1] > 1200) {
+    car.write_speed(200);
+    fast = true;
+  } else {
+    if (fast) {
+      car.write_speed(-80);
+      delay(100);
+    }
+    car.write_speed(110);
+    fast = false;
+  }
+  car.write_steer(steer);
+
+  if (sensors[3] == 0.0){
+    car.write_speed(0);
+    delay(5000);
+  }
 }

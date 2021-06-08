@@ -1,6 +1,16 @@
 #include <Wire.h>
 #include <VL53L0X.h>
 
+void print_sensors(Car car){
+  float* sensors = car.read_sensors();
+  for (int i = 0; i < car.sensor_amount; i++){
+    Serial.print(i);
+    Serial.print(": ");
+    Serial.println(sensors[i]);
+  }
+  Serial.println("----------");
+}
+
 void wiggle(Car car){
   for (int i = -100; i < 100; i++){
     car.write_steer(i*10);
