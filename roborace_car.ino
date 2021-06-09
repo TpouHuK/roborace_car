@@ -1,4 +1,4 @@
-#include "mini_car.h"
+#include "big_car.h"
 #include "tests.h"
 
 Car car;
@@ -6,39 +6,34 @@ Car car;
 void setup() {
   car.init();
   Serial.begin(9600);
-  while (car.read_sensors()[3] == 1){}
-  while (car.read_sensors()[3] == 0){}
 }
 
 void loop() {
-  print_sensors(car);
-  delay(1000);
+  car.write_steer(1000);
   return;
   float* sensors = car.read_sensors();
-  // 0 - Left
-  // 1 - Middle
-  // 2 - Right
-  // 3 - Front button, 0 is pressed, 1 is released
+  
+  // <0 /1 ^2 \3 >4
+  float mid_distance = sensors[0] - sensors[4];
+  float turn_distance = sensors[1] - sensors[3];
 
-  int steer = (sensors[2] - sensors[0]) / 2;
+  const float P1 = 2;
+  const float P2 = 0.5;
   
-  static bool fast = false;
-  
-  if (sensors[1] > 1200) {
-    car.write_speed(200);
-    fast = true;
+  float turn;
+  if (abs(mid_distance) > 400){
+    turn = turn_distance * P1;
   } else {
-    if (fast) {
-      car.write_speed(-80);
-      delay(100);
-    }
-    car.write_speed(110);
-    fast = false;
+    turn = turn_distance * P2;
+    turn = constrain(turn, -500, 500);
   }
-  car.write_steer(steer);
-
-  if (sensors[3] == 0.0){
-    car.write_speed(0);
-    delay(5000);
-  }
+  //Serial.print("mid: ");
+  //Serial.println(mid_distance);
+  //Serial.print("turn: ");
+  //Serial.println(turn_distance);
+  
+  //print_sensors(car);
+  //delay(1000);
+  //car.write_speed(100);
+  car.write_steer(turn);
 }
