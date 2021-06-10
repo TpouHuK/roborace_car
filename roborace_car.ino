@@ -38,12 +38,24 @@ void loop() {
   } else {
     if (fast) {
       // Slow down
-      car.write_speed(-200);
+      car.write_speed(-100);
       delay(150);
     }
     digitalWrite(13, LOW);
-    spd = 80;
+    spd = 100;
     fast = false;
+  }
+
+  if (sensors[2] < 80) {
+    car.write_speed(0);
+    car.write_steer(-turn);
+    car.write_speed(-200);
+    while (sensors[2] < 250) {
+        sensors = car.read_sensors();
+    };
+    delay(400);
+    car.write_speed(200);
+    delay(600);
   }
 
   car.write_speed(spd);
