@@ -6,34 +6,46 @@ Car car;
 void setup() {
   car.init();
   Serial.begin(9600);
+  pinMode(13, OUTPUT);
+  digitalWrite(13, LOW);
 }
 
 void loop() {
-  car.write_steer(1000);
-  return;
   float* sensors = car.read_sensors();
-  
-  // <0 /1 ^2 \3 >4
-  float mid_distance = sensors[0] - sensors[4];
-  float turn_distance = sensors[1] - sensors[3];
 
-  const float P1 = 2;
-  const float P2 = 0.5;
-  
-  float turn;
-  if (abs(mid_distance) > 400){
-    turn = turn_distance * P1;
+  // <0 /1 ^2 \3 >4
+  float mid_distance = sensors[1] - sensors[3];
+  float turn = mid_distance * 2;
+
+  float max_constrain = -33 * (-25 + sensors[2] / 10) + 2000;
+  max_constrain = constrain(max_constrain, 300, 1000);
+  turn = constrain(turn, -max_constrain, max_constrain);
+
+  static bool fast = false;
+  static float turn_acc = 0;
+  turn_acc = turn_acc * 0.8 + abs(turn * turn);
+
+  float spd;
+  if (abs(turn_acc) < 2250000) {
+    if (not fast) {
+      // Speed up
+      car.write_speed(400);
+      delay(150);
+    }
+    digitalWrite(13, HIGH);
+    spd = 130;
+    fast = true;
   } else {
-    turn = turn_distance * P2;
-    turn = constrain(turn, -500, 500);
+    if (fast) {
+      // Slow down
+      car.write_speed(-200);
+      delay(150);
+    }
+    digitalWrite(13, LOW);
+    spd = 80;
+    fast = false;
   }
-  //Serial.print("mid: ");
-  //Serial.println(mid_distance);
-  //Serial.print("turn: ");
-  //Serial.println(turn_distance);
-  
-  //print_sensors(car);
-  //delay(1000);
-  //car.write_speed(100);
+
+  car.write_speed(spd);
   car.write_steer(turn);
 }
