@@ -1,8 +1,27 @@
 #include <Wire.h>
 #include <VL53L0X.h>
 
+/*
+ sprintf(data, "a%04db%04dc%04dd%04de%04df%04d", s[0], s[1], s[2], s[3], s[4], s[5]);
+  Serial.println();
+  Serial.println(data);
+  Serial.flush();
+
+  /* delay(3000);
+  car.write_speed(-100);
+  delay(50);
+  car.write_speed(0);
+  delay(50);
+  car.write_speed(-100);
+  delay(1000);
+
+  car.write_speed(0);
+  delay(5000); */
+  
+ */
+
 void print_sensors(Car car){
-  float* sensors = car.read_sensors();
+  int* sensors = car.read_sensors();
   for (int i = 0; i < car.sensor_amount; i++){
     Serial.print(i);
     Serial.print(": ");
@@ -124,4 +143,3 @@ void i2c_bus_scan(){
   else
     Serial.println("done\n");
 }
-
