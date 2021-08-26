@@ -1,4 +1,4 @@
-#include "mini_car.h"
+#include "big_car.h"
 //#include "tests.h"
 #define LOOP_TIME 30;
 
@@ -14,6 +14,21 @@ void setup() {
 unsigned long next_loop = 0;
 bool speed = false;
 
+unsigned int afk_counter = 0;
+float sum_turn = 0;
+
+void go_back() {
+  car.write_speed(0);
+      while (get_speed() > 0.0001) {}
+      car.write_speed(-100);
+      delay(100);
+      car.write_speed(0);
+      delay(100);
+      car.write_speed(-100);
+      delay(700);
+      car.write_speed(0);
+      while (get_speed() > 0.0001) {}
+}
 
 void loop() {
   unsigned long cur_time = millis();
@@ -22,40 +37,62 @@ void loop() {
     next_loop = max(cur_time, next_loop);
 
     int* s = car.read_sensors();
+    float speed = get_speed();
+    
+    int front_dist = (s[4] + s[1]) / 2;
 
-    int front_dist = s[1];
-    int diff = s[2] - s[0];
-    
-    if (s[4] < 1800 || s[1] < 300) {
-      car.write_speed(80);
-      car.write_steer(diff*20);
+    if (front_dist > 100){
+      if (speed < 1.3) {
+        car.write_speed(80);
+      } else {
+        car.write_speed(0);
+      }
     } else {
-      car.write_speed(200);
-      car.write_steer(0);
-    }
-    
-    /* sprintf(data, "a%04db%04dc%04dd%04de%04df%04d", front_dist, s[1], s[4], 0, 0, 0);
-    Serial.println();
-    Serial.println(data);
-    Serial.flush(); */
-    
-    /*int front_dist = (s[4] + s[1]) / 2;
-    
-    if (front_dist < 600) {
       car.write_speed(0);
-    } else {
-      car.write_speed(50);
     }
 
     
     int turn_force = (s[0]+s[3]/2) - (s[5]+s[2]/2);
     int diff;
-    if (front_dist > 900){
-      diff = 0;
+    
+    if (front_dist > 999){
+      diff =  turn_force/20;
     } else {
       diff =  turn_force;  
     }
+    
     car.write_steer(diff*-12);
-    */
+
+    float cur_turn = diff*-12;
+    cur_turn = constrain(cur_turn, -1000, 1000);
+
+    sum_turn += cur_turn;
+    sum_turn = constrain(sum_turn, -9999999, 2000);
+
+    if (sum_turn < -60000) {
+      sum_turn = 0;
+      car.write_speed(-100);
+      delay(1000);
+      car.write_steer(diff*12);
+      go_back();
+      car.write_steer(diff*-12);
+      car.write_speed(50);
+      delay(1000);
+    }
+    
+    if (front_dist < 100 && speed < 0.0001 ) {
+      go_back();
+    }
+    
+    if (speed < 0.0001) {
+      afk_counter += 1;
+    } else {
+      afk_counter = 0;
+    }
+
+    if (afk_counter > 170) {
+      go_back();
+      afk_counter = 0;
+    }
   }
 }

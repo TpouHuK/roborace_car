@@ -6,6 +6,7 @@
 
 #define SERVO_PIN 10
 #define MOTOR_PIN 6
+#define TAHO_PIN 2
 
 #define NEUTRAL_POINT 95
 #define MIN_POINT 60
@@ -45,10 +46,32 @@ class Car {
     void init();
 };
 
+volatile unsigned long last_turnover = 0, turnover = 0, turnover_time = 0;
+void taho_interrupt(){
+  turnover = micros() - last_turnover;
+  if (turnover > 20000){
+    turnover_time = turnover;
+    last_turnover = micros();
+  }
+}
+
+const float pi = 3.141592653589;
+
+float get_speed(){
+  if (micros() - last_turnover > 1000000){
+    return 0; 
+  }
+  return 2.0*pi/((float)turnover_time/1000000)*0.035;
+  //return turnover_time;
+}
+
 void Car::init(){
   
   steer_servo.attach(SERVO_PIN);
   motor.attach(MOTOR_PIN);
+  
+  pinMode(2, INPUT);
+  attachInterrupt(0, taho_interrupt, RISING);
   
   Wire.begin();
 
