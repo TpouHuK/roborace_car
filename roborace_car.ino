@@ -1,3 +1,6 @@
+/*
+Arduino по умолчанию все считает в int. Поэтому в строку turnover = micros() - last_turnover; нужно записать так: turnover = (long) (micros() - last_turnover); Ну и в условии соответственно тоже. Иначе будут переполнения и соответственно глюки. Сам по таким граблям ходил :-)
+*/
 #include "big_car.h"
 //#include "tests.h"
 #define LOOP_TIME 30;

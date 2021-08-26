@@ -48,7 +48,7 @@ class Car {
 
 volatile unsigned long last_turnover = 0, turnover = 0, turnover_time = 0;
 void taho_interrupt(){
-  turnover = micros() - last_turnover;
+  turnover =  (long)(micros() - last_turnover);
   if (turnover > 20000){
     turnover_time = turnover;
     last_turnover = micros();
