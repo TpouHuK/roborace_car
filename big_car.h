@@ -2,14 +2,14 @@
 #include <Wire.h>
 #include <VL53L0X.h>
 
-#define SENSOR_AMOUNT 6
+#define SENSOR_AMOUNT 8
 
 #define SERVO_PIN 10
 #define MOTOR_PIN 6
 #define TAHO_PIN 2
 
-#define NEUTRAL_POINT 95
-#define MIN_POINT 60
+#define NEUTRAL_POINT 96
+#define MIN_POINT 60  
 #define MAX_POINT 130
 
 #define NEUTRAL_SPEED 90
@@ -17,16 +17,14 @@
 #define MAX_SPEED 180
 #define MIN_BSPEED 85
 
-#define IR_PIN0 A1
-#define IR_PIN1 A0
-#define IR_PIN2 A3
-#define IR_PIN3 A2
+#define IR_PIN0 A1 //TODO
+#define IR_PIN1 A0 //TODO
+#define IR_PIN2 A3 //TODO
 
 #define TCAADDR 0x70
 
 void tca_select(uint8_t i) {
  if (i > 7) return;
- 
  Wire.beginTransmission(TCAADDR);
  Wire.write(1 << i);
  Wire.endTransmission();
@@ -46,7 +44,7 @@ class Car {
     void init();
 };
 
-volatile unsigned long last_turnover = 0, turnover = 0, turnover_time = 0;
+volatile unsigned long last_turnover = 0, turnover = 0, turnover_time = 0, cur_time = 0;
 void taho_interrupt(){
   turnover =  (long)(micros() - last_turnover);
   if (turnover > 20000){
@@ -58,10 +56,9 @@ void taho_interrupt(){
 const float pi = 3.141592653589;
 
 float get_speed(){
-  if (micros() - last_turnover > 1000000){
-    return 0; 
-  }
-  return 2.0*pi/((float)turnover_time/1000000)*0.035;
+  cur_time = (long)(micros() - last_turnover);
+  cur_time = max(cur_time, turnover_time);
+  return 2.0*pi/((float)cur_time/1000000)*0.035/2;
   //return turnover_time;
 }
 
@@ -83,7 +80,7 @@ void Car::init(){
   // increase laser pulse periods (defaults are 14 and 10 PCLKs)
     //laser_sensors[i].setVcselPulsePeriod(VL53L0X::VcselPeriodPreRange, 18);
     //laser_sensors[i].setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 14);
-    laser_sensors[i].setMeasurementTimingBudget(30000);
+    laser_sensors[i].setMeasurementTimingBudget(20000);
     laser_sensors[i].startContinuous();
   }
   
@@ -97,14 +94,13 @@ void Car::write_speed(int s){
     s = map(s, 1, 1000, MIN_SPEED, MAX_SPEED);
   } else if (s < 0) {
     s = map(s, -1000, -1, 0, MIN_BSPEED);
-    //s = 90+s;
   } else {
     s = NEUTRAL_SPEED;
   }
   motor.write(s);
 }
 
-const int SAMPLE_NUM = 5;
+const int SAMPLE_NUM = 3;
 
 int compare_int (const void * a, const void * b){
   if ( *(int*)a < *(int*)b ) return -1;
@@ -141,6 +137,8 @@ int* Car::read_sensors(){
     values[i] = constrain(rv, 0, 1000);
     //values[i] = laser_sensors[i].readRangeSingleMillimeters();
   }
+  values[6] = read_sensor(A7, 20150);
+  values[7] = read_sensor(A0, 20150);
   
   return values;
 }
